@@ -14,50 +14,71 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const PORT = process.env.PORT || 5000;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "*";
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
-  },
+    origin: CLIENT_ORIGIN,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+  }
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(
+  cors({
+    origin: CLIENT_ORIGIN
+  })
+);
 
-app.use("/api/trucks", truckRoutes);
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("TruckIQ backend running");
 });
 
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "TruckIQ Fleet Monitor API"
+  });
+});
+
+app.use("/api/trucks", truckRoutes);
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+  });
 
-// Fake GPS updates
 setInterval(async () => {
-  const trucks = await Truck.find();
+  try {
+    const trucks = await Truck.find();
 
-  for (let t of trucks) {
-    t.lat += (Math.random() - 0.5) * 0.01;
-    t.lng += (Math.random() - 0.5) * 0.01;
-    t.speed = Math.floor(Math.random() * 80);
-    t.status = t.speed === 0 ? "idle" : "moving";
-    t.lastUpdated = new Date();
+    for (let t of trucks) {
+      t.lat += (Math.random() - 0.5) * 0.01;
+      t.lng += (Math.random() - 0.5) * 0.01;
+      t.speed = Math.floor(Math.random() * 80);
+      t.status = t.speed === 0 ? "idle" : "moving";
+      t.lastUpdated = new Date();
 
-    await t.save();
+      await t.save();
 
-    await LocationLog.create({
-      truckId: t.truckId,
-      lat: t.lat,
-      lng: t.lng,
-      speed: t.speed,
-    });
+      await LocationLog.create({
+        truckId: t.truckId,
+        lat: t.lat,
+        lng: t.lng,
+        speed: t.speed
+      });
 
-    io.emit("update", t);
+      io.emit("update", t);
+    }
+  } catch (err) {
+    console.error("GPS update simulation failed:", err.message);
   }
 }, 5000);
 
-server.listen(5000, () => {
-  console.log("Server running on port 5000");
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
