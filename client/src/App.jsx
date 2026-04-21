@@ -2,51 +2,87 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import "./App.css";
 
-const socket = io("http://localhost:5000");
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function App() {
   const [trucks, setTrucks] = useState([]);
+  const [error, setError] = useState("");
+
+  const fetchTrucks = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/trucks`);
+      setTrucks(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Could not load truck data from backend.");
+    }
+  };
 
   useEffect(() => {
     fetchTrucks();
 
+    const socket = io(API_URL);
+
     socket.on("update", (updatedTruck) => {
       setTrucks((prev) =>
-        prev.map((t) =>
-          t.truckId === updatedTruck.truckId ? updatedTruck : t
+        prev.map((truck) =>
+          truck.truckId === updatedTruck.truckId ? updatedTruck : truck
         )
       );
     });
 
-    return () => socket.off("update");
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  const fetchTrucks = async () => {
-    const res = await axios.get("http://localhost:5000/api/trucks");
-    setTrucks(res.data);
-  };
-
   return (
-    <div style={{ height: "100vh" }}>
-      <h2 style={{ textAlign: "center" }}>TruckIQ Fleet Monitor</h2>
+    <div className="app">
+      <h1>TruckIQ Fleet Monitor</h1>
 
-      <MapContainer center={[30.2672, -97.7431]} zoom={5} style={{ height: "90%" }}>
+      {error && <p className="error">{error}</p>}
+
+      <MapContainer
+        center={[31.5, -96.5]}
+        zoom={6}
+        scrollWheelZoom={true}
+        className="map"
+      >
         <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {trucks.map((t) => (
-          <Marker key={t._id} position={[t.lat, t.lng]}>
+        {trucks.map((truck) => (
+          <Marker key={truck._id} position={[truck.lat, truck.lng]}>
             <Popup>
-  <b>{t.truckId}</b><br />
-  Driver: {t.driverName}<br />
-  Speed: {t.speed} mph<br />
-  Status: {t.status}
-</Popup>
+              <strong>{truck.truckId}</strong>
+              <br />
+              Driver: {truck.driverName}
+              <br />
+              Speed: {truck.speed} mph
+              <br />
+              Status: {truck.status}
+            </Popup>
           </Marker>
         ))}
       </MapContainer>
+
+      <div className="truck-list">
+        <h2>Active Trucks</h2>
+
+        {trucks.map((truck) => (
+          <div className="truck-card" key={truck._id}>
+            <strong>{truck.truckId}</strong>
+            <p>Driver: {truck.driverName}</p>
+            <p>Speed: {truck.speed} mph</p>
+            <p>Status: {truck.status}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
