@@ -15,6 +15,7 @@ function App() {
     try {
       const res = await axios.get(`${API_URL}/api/trucks`);
       setTrucks(res.data);
+      setError("");
     } catch (err) {
       console.error(err);
       setError("Could not load truck data from backend.");
@@ -24,7 +25,9 @@ function App() {
   useEffect(() => {
     fetchTrucks();
 
-    const socket = io(API_URL);
+    const socket = io(API_URL, {
+      transports: ["websocket", "polling"]
+    });
 
     socket.on("update", (updatedTruck) => {
       setTrucks((prev) =>
