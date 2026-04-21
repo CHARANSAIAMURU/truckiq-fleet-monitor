@@ -17,7 +17,7 @@ function App() {
       setTrucks(res.data);
       setError("");
     } catch (err) {
-      console.error(err);
+      console.error("Truck data error:", err);
       setError("Could not load truck data from backend.");
     }
   };
