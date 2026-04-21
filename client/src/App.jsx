@@ -5,12 +5,14 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// IMPORTANT: no fallback to localhost in production
+const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
   const [trucks, setTrucks] = useState([]);
   const [error, setError] = useState("");
 
+  // Fetch trucks
   const fetchTrucks = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/trucks`);
@@ -25,8 +27,13 @@ function App() {
   useEffect(() => {
     fetchTrucks();
 
+    // Socket connection
     const socket = io(API_URL, {
-      transports: ["websocket", "polling"]
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket connected");
     });
 
     socket.on("update", (updatedTruck) => {
@@ -35,6 +42,10 @@ function App() {
           truck.truckId === updatedTruck.truckId ? updatedTruck : truck
         )
       );
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected");
     });
 
     return () => {
