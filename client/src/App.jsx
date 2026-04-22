@@ -5,14 +5,15 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-// IMPORTANT: no fallback to localhost in production
-console.log("API URL =", import.meta.env.VITE_API_URL);
+// FIX: define API_URL properly
+const API_URL = import.meta.env.VITE_API_URL;
+
+console.log("API URL =", API_URL);
 
 function App() {
   const [trucks, setTrucks] = useState([]);
   const [error, setError] = useState("");
 
-  // Fetch trucks
   const fetchTrucks = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/trucks`);
@@ -27,7 +28,6 @@ function App() {
   useEffect(() => {
     fetchTrucks();
 
-    // Socket connection
     const socket = io(API_URL, {
       transports: ["websocket", "polling"],
     });
@@ -48,9 +48,7 @@ function App() {
       console.log("Socket disconnected");
     });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, []);
 
   return (
@@ -59,12 +57,7 @@ function App() {
 
       {error && <p className="error">{error}</p>}
 
-      <MapContainer
-        center={[31.5, -96.5]}
-        zoom={6}
-        scrollWheelZoom={true}
-        className="map"
-      >
+      <MapContainer center={[31.5, -96.5]} zoom={6} scrollWheelZoom className="map">
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
