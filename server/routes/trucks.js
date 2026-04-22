@@ -41,7 +41,6 @@ router.post("/seed", async (req, res) => {
     ];
 
     const created = await Truck.insertMany(trucks);
-
     res.json(created);
   } catch (err) {
     res.status(500).json({ message: err.message });
