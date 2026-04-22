@@ -3,13 +3,9 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
-
 require("dotenv").config();
 
-console.log("MONGO_URI USED:");
-console.log(process.env.MONGO_URI);
-
-const truckRoutes = require("./routes/truck");
+const truckRoutes = require("./routes/trucks");
 
 const app = express();
 const server = http.createServer(app);
