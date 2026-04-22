@@ -4,6 +4,8 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
+console.log("MONGO_URI USED:");
+console.log(process.env.MONGO_URI);
 
 const truckRoutes = require("./routes/truck");
 
