@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import "./App.css";
 
 // IMPORTANT: no fallback to localhost in production
-const API_URL = import.meta.env.VITE_API_URL;
+console.log("API URL =", import.meta.env.VITE_API_URL);
 
 function App() {
   const [trucks, setTrucks] = useState([]);
